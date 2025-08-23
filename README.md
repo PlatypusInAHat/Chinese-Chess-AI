@@ -1,0 +1,1 @@
+This is the project about creating a simple Chinese Chess AI using for education purpose in module IT3160 - Introduction to AI of Hanoi University of Science and Technology
