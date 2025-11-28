@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from random import choice, shuffle
 from game_state import GameState
 from team import Team
+from functools import lru_cache
 
 
 class Node(ABC):
@@ -75,7 +76,7 @@ class NodeMinimax(Node):
     def minimax(
         self, depth: int, max_turn: bool, alpha: float = -inf, beta: float = inf
     ) -> float:
-        """Minimax method"""
+        """Minimax method with alpha-beta pruning optimization"""
 
         self.minimax_value = None
         # If the node reaches the target depth
@@ -98,20 +99,20 @@ class NodeMinimax(Node):
         if max_turn is True:
             best_value = -inf
 
-            # Sort the list of children
+            # Sort the list of children once
             if self._is_children_sorted is False:
                 self.list_of_children.sort(
                     key=lambda node: node.game_state.value, reverse=True
                 )
                 self._is_children_sorted = True
 
-            # Go to the deeper depth
+            # Go to the deeper depth with early pruning
             for child in self.list_of_children:
                 value = child.minimax(depth - 1, False, alpha, beta)
                 best_value = max(best_value, value)
                 alpha = max(alpha, best_value)
                 if beta <= alpha:
-                    break
+                    break  # Beta cutoff - prune remaining branches
             self.minimax_value = best_value
             return best_value
 
@@ -119,20 +120,20 @@ class NodeMinimax(Node):
         else:
             best_value = inf
 
-            # Sort the list of children
+            # Sort the list of children once
             if self._is_children_sorted is False:
                 self.list_of_children.sort(
                     key=lambda node: node.game_state.value, reverse=False
                 )
                 self._is_children_sorted = True
 
-            # Go to the deeper depth
+            # Go to the deeper depth with early pruning
             for child in self.list_of_children:
                 value = child.minimax(depth - 1, True, alpha, beta)
                 best_value = min(best_value, value)
                 beta = min(beta, best_value)
                 if beta <= alpha:
-                    break
+                    break  # Alpha cutoff - prune remaining branches
             self.minimax_value = best_value
             return best_value
 
@@ -205,30 +206,33 @@ class NodeMCTS(Node):
     # Instance method
 
     def best_uct(self):
-        """This function calculates the child with the best UCT index of node"""
+        """This function calculates the child with the best UCT index of node - optimized"""
 
         # Preset initialization
         current_best_uct_value = -inf
         current_result_child = []
+        
+        # Pre-calculate exploration component
+        ln_n = log(self.n) if self.n > 0 else 0
+        exploration_factor = self.e * (ln_n ** 0.5)
 
         for child in self.list_of_children:
             if child.n != 0:
-                # If the current child has been visited
-                uct = child.q / child.n + self.e * (log(self.n) / child.n**2) ** self.EXPONENTIAL_INDEX
+                # If the current child has been visited - faster UCT calculation
+                uct = child.q / child.n + exploration_factor * (1.0 / (child.n ** self.EXPONENTIAL_INDEX))
             else:
-                # If the curent child has not been visited
+                # If the current child has not been visited
                 uct = inf
 
-            # Compare random choosing
+            # Compare and collect best children
             if uct > current_best_uct_value:
                 current_best_uct_value = uct
                 current_result_child = [child]
             elif uct == current_best_uct_value:
                 current_result_child.append(child)
 
-        shuffle(current_result_child)
-        res = current_result_child.pop()
-        return res
+        # Return best child (with randomization among ties)
+        return current_result_child[0] if len(current_result_child) == 1 else choice(current_result_child)
 
     def _create_node(self, game_state: GameState, parent, parent_move: tuple):
         """This method creates a new MCTS node"""
@@ -345,22 +349,25 @@ class NodeMCTS(Node):
         current_node.update_stat(result)
 
     def best_move(self):
-        """This method returns the "best child" of the current node"""
+        """This method returns the "best child" of the current node - optimized"""
 
         max_number_of_visits = -inf
-        current_best_child = []
+        current_best_child = None
+        best_children_list = []
 
-        # Traverse the children node
+        # Single pass through children with no list clearing
         for child in self.list_of_children:
-            val = child.n + child.q / child.n * 21000
+            val = child.n + child.q / child.n * 21000 if child.n != 0 else child.n
+            
             if val > max_number_of_visits:
                 max_number_of_visits = val
-                current_best_child.clear()
-            if val == max_number_of_visits:
-                current_best_child.append(child)
+                best_children_list = [child]
+                current_best_child = child
+            elif val == max_number_of_visits:
+                best_children_list.append(child)
 
-        shuffle(current_best_child)
-        return current_best_child.pop()
+        # Return best child or random from ties
+        return current_best_child if len(best_children_list) == 1 else choice(best_children_list)
 
 
 class NodeExcavationMinimax(NodeMinimax):

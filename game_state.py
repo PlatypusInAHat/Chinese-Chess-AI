@@ -2,6 +2,7 @@
 """Module providing the property of game state"""
 from cmath import inf
 from random import shuffle
+from functools import lru_cache
 from piece import General, Piece
 from team import Team
 
@@ -36,6 +37,7 @@ class GameState:
         self._value = None
         self._current_team = current_team
         self._all_child_gamestates = None
+        self._board_hash = None
 
     # Properties initialization
     # .value
@@ -197,10 +199,11 @@ class GameState:
 
     def generate_all_game_states(self) -> list:
         """This method returns the list of all states that can be accessed
-        from the current state by a single move"""
+        from the current state by a single move - optimized with early termination"""
 
         # Create a list that keeps track of all game states that can be generated.
         game_states_available = list()
+        total_pieces = self.number_of_black_pieces + self.number_of_red_pieces
 
         # Iterate through all moves
         for i in range(self.BOARD_SIZE_X):
@@ -214,13 +217,18 @@ class GameState:
                 # If the current team's piece is on that position,
                 # then create an instance and get its admissible moves list
                 if Team[notation[0]] is self._current_team:
-                    moves_list = Piece.create_instance(
+                    piece = Piece.create_instance(
                         (i, j),
                         notation,
                         self.board,
-                        self.number_of_black_pieces + self.number_of_red_pieces,
+                        total_pieces,
                         self._get_number_of_team_pieces(Team[notation[0]]),
-                    ).admissible_moves
+                    )
+                    moves_list = piece.admissible_moves
+
+                    # Early termination: If no moves, skip to next piece
+                    if not moves_list:
+                        continue
 
                     # Iterate all moves in the moves list
                     for new_pos in moves_list:
@@ -280,8 +288,9 @@ class GameState:
 
     # Static method
     @staticmethod
+    @lru_cache(maxsize=65536)
     def hash_board(board):
-        """This method returns the hash code of a board"""
+        """This method returns the hash code of a board - cached for performance"""
         return hash(tuple(map(tuple, board)))
 
     # Class method
