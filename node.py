@@ -48,6 +48,10 @@ class Node(ABC):
         self.list_of_children = self.get_all_children()
         self._is_generated_all_children = True
 
+    def sort_children_with_heuristic(self):
+        """Default method for sorting children - subclasses can override"""
+        pass
+
     # Abstract method
     @abstractmethod
     def _create_node(self, game_state: GameState, parent, parent_move: tuple):

@@ -8,6 +8,7 @@ import gc
 from gui_utilities import Button, DropDown, InputBox
 from game_state import GameState
 from game_tree import GameTree, GameTreeMinimax, GameTreeMCTS, GameTreeDynamicMinimax, GameTreeDeepeningMinimax, GameTreeExcavationMinimax
+from advanced_algorithms import GameTreeAlphaBeta, GameTreeNegamax, GameTreeMTD, GameTreeHybrid
 from team import Team
 from piece import Piece
 import os
@@ -53,6 +54,14 @@ def str_to_type(type_str: str) -> GameTree:
         return GameTreeDeepeningMinimax
     elif type_str == 'ExMinimax':
         return GameTreeExcavationMinimax
+    elif type_str == 'AlphaBeta++':
+        return GameTreeAlphaBeta
+    elif type_str == 'Negamax':
+        return GameTreeNegamax
+    elif type_str == 'MTD(f)':
+        return GameTreeMTD
+    elif type_str == 'Hybrid':
+        return GameTreeHybrid
 
 
 def draw_gamestate(game_state: GameState, inverse: bool = False) -> None:
@@ -253,7 +262,8 @@ def pve_menu() -> None:
         ["#404040", "#606060"],
         20, 270, 100, 30,
         pygame.font.SysFont(None, 25),
-        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax"])
+        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax", 
+                 "AlphaBeta++", "Negamax", "MTD(f)", "Hybrid"])
 
     bot_value = DropDown(
         ["#000000", "#202020"],
@@ -770,7 +780,8 @@ def eve_menu():
         ["#404040", "#606060"],
         20, 290, 100, 30,
         pygame.font.SysFont(None, 25),
-        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax"])
+        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax",
+                 "AlphaBeta++", "Negamax", "MTD(f)", "Hybrid"])
 
     black_value = DropDown(
         ["#000000", "#202020"],
@@ -784,7 +795,8 @@ def eve_menu():
         ["#F07470", "#F1959B"],
         350, 290, 100, 30,
         pygame.font.SysFont(None, 25),
-        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax"])
+        "Type", ["Minimax", "MCTS", "DyMinimax", "DeMinimax", "ExMinimax",
+                 "AlphaBeta++", "Negamax", "MTD(f)", "Hybrid"])
 
     red_value = DropDown(
         ["#DC1C13", "#EA4C46"],

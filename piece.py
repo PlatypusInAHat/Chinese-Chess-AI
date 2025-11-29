@@ -200,12 +200,14 @@ class Advisor(Piece):
         if value_pack == 0:
             return self._piece_value
 
-        # Value pack 1
+        # Value pack 1: Mobility-focused (bonus for moves available, penalty if trapped)
         elif value_pack == 1:
             change = 0
-            # If the advisor has no admissible moves, it receives a penalty of 10 points
+            # Bonus: +1 point per admissible move (encourages active play)
+            change += len(self.admissible_moves) * 0.5
+            # Penalty: -10 points if completely trapped
             if len(self.admissible_moves) == 0:
-                change = -10
+                change -= 10
             return self._piece_value + change
 
         # Value pack 2
@@ -268,12 +270,14 @@ class Cannon(Piece):
         if value_pack == 0:
             return self._piece_value
 
-        # Value pack 1
+        # Value pack 1: Mobility-focused
         elif value_pack == 1:
             change = 0
-            # Receive a penalty of 10 points if the cannon has no admissible moves
+            # Bonus: +1 point per admissible move (encourages active play)
+            change += len(self.admissible_moves) * 0.5
+            # Penalty: -10 points if completely trapped
             if len(self.admissible_moves) == 0:
-                change = -10
+                change -= 10
             return self._piece_value + change
 
         # Value pack 2

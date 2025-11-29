@@ -288,10 +288,13 @@ class GameState:
 
     # Static method
     @staticmethod
-    @lru_cache(maxsize=65536)
     def hash_board(board):
-        """This method returns the hash code of a board - cached for performance"""
-        return hash(tuple(map(tuple, board)))
+        """This method returns the hash code of a board"""
+        try:
+            return hash(tuple(map(tuple, board)))
+        except TypeError:
+            # If board is already a tuple or has unhashable elements
+            return hash(str(board))
 
     # Class method
     @classmethod
